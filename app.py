@@ -31,9 +31,15 @@ def clean_text(text):
 
 def extract_text_from_pdf(file):
     text = ""
-    reader = PdfReader(file)
-    for page in reader.pages:
-        text += page.extract_text()
+    try:
+        # Use 'strict=False' to allow PyPDF2 to fix minor formatting issues automatically
+        reader = PdfReader(file, strict=False) 
+        for page in reader.pages:
+            content = page.extract_text()
+            if content:
+                text += content
+    except Exception as e:
+        st.error(f"Error reading PDF: {e}")
     return text
 
 # Skill Gap Analysis function
