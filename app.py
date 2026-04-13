@@ -12,6 +12,15 @@ import seaborn as sns
 st.set_page_config(page_title="AI Resume Screener", layout="wide")
 
 # Load NLP model
+@st.cache_resource # Use resource for models
+def load_nlp():
+    # This downloads the small English model if not present
+    try:
+        return spacy.load("en_core_web_sm")
+    except:
+        spacy.cli.download("en_core_web_sm")
+        return spacy.load("en_core_web_sm")
+
 @st.cache_data
 def load_dataset():
     try:
@@ -19,11 +28,11 @@ def load_dataset():
     except:
         return None
 
-df_pool = load_dataset()
-# --------------------------------------
+# Initialize data and model
 nlp = load_nlp()
+df_pool = load_dataset()
 
-# Cleaning logic from your notebook
+# Cleaning logic
 def clean_text(text):
     text = text.lower()
     text = re.sub('http\S+\s*', ' ', text)
@@ -37,7 +46,6 @@ def clean_text(text):
 def extract_text_from_pdf(file):
     text = ""
     try:
-        # Use 'strict=False' to allow PyPDF2 to fix minor formatting issues automatically
         reader = PdfReader(file, strict=False) 
         for page in reader.pages:
             content = page.extract_text()
@@ -66,7 +74,7 @@ st.sidebar.header("Job Settings")
 jd_input = st.sidebar.text_area("Paste Job Description here:", height=300)
 
 # File Uploader
-uploaded_files = st.file_uploader("Upload Files", type=["pdf", "csv"], accept_multiple_files=True)
+uploaded_files = st.file_uploader("Upload Files", type=["pdf"], accept_multiple_files=True)
 
 if jd_input and uploaded_files:
     with st.spinner("Analyzing resumes..."):
@@ -90,7 +98,7 @@ if jd_input and uploaded_files:
         # Build Results Table
         results_df = pd.DataFrame({
             "Resume Name": [r['FileName'] for r in resume_data],
-            "Match Score (%)": [round(s * 100, 2) for s in similarities]
+            "Match Score (%)": [round(float(s) * 100, 2) for s in similarities]
         }).sort_values(by="Match Score (%)", ascending=False)
 
         # Display Top Results
@@ -114,17 +122,16 @@ if jd_input and uploaded_files:
                 st.success("Perfect Match! All skills found.")
 
         with col2:
-    st.subheader("📊 Talent Pool Analysis")
-    if df_pool is not None:
-        fig, ax = plt.subplots()
-        # This creates a bar chart of the top categories in your dataset
-        sns.countplot(y="Category", data=df_pool, 
-                      order=df_pool['Category'].value_counts().index[:10], 
-                      palette="viridis", ax=ax)
-        ax.set_title("Top 10 Resume Categories in Database")
-        st.pyplot(fig)
-    else:
-        st.warning("Upload 'UpdatedResumeDataSet.csv' to GitHub to see pool analytics.")
+            st.subheader("📊 Talent Pool Analysis")
+            if df_pool is not None:
+                fig, ax = plt.subplots()
+                sns.countplot(y="Category", data=df_pool, 
+                              order=df_pool['Category'].value_counts().index[:10], 
+                              palette="viridis", ax=ax)
+                ax.set_title("Top 10 Resume Categories in Database")
+                st.pyplot(fig)
+            else:
+                st.warning("Upload 'UpdatedResumeDataSet.csv' to GitHub to see pool analytics.")
 
 else:
     st.info("Please enter a Job Description and upload at least one resume to start.")
