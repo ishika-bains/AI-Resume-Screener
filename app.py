@@ -12,10 +12,15 @@ import seaborn as sns
 st.set_page_config(page_title="AI Resume Screener", layout="wide")
 
 # Load NLP model
-@st.cache_resource
-def load_nlp():
-    return spacy.load("en_core_web_sm")
+@st.cache_data
+def load_dataset():
+    try:
+        return pd.read_csv("UpdatedResumeDataSet.csv")
+    except:
+        return None
 
+df_pool = load_dataset()
+# --------------------------------------
 nlp = load_nlp()
 
 # Cleaning logic from your notebook
@@ -109,10 +114,17 @@ if jd_input and uploaded_files:
                 st.success("Perfect Match! All skills found.")
 
         with col2:
-            st.subheader("📊 Match Distribution")
-            fig, ax = plt.subplots()
-            sns.barplot(x="Match Score (%)", y="Resume Name", data=results_df.head(5), palette="viridis", ax=ax)
-            st.pyplot(fig)
+    st.subheader("📊 Talent Pool Analysis")
+    if df_pool is not None:
+        fig, ax = plt.subplots()
+        # This creates a bar chart of the top categories in your dataset
+        sns.countplot(y="Category", data=df_pool, 
+                      order=df_pool['Category'].value_counts().index[:10], 
+                      palette="viridis", ax=ax)
+        ax.set_title("Top 10 Resume Categories in Database")
+        st.pyplot(fig)
+    else:
+        st.warning("Upload 'UpdatedResumeDataSet.csv' to GitHub to see pool analytics.")
 
 else:
     st.info("Please enter a Job Description and upload at least one resume to start.")
