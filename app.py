@@ -74,7 +74,7 @@ st.sidebar.header("Job Settings")
 jd_input = st.sidebar.text_area("Paste Job Description here:", height=300)
 
 # File Uploader
-uploaded_files = st.file_uploader("Upload Files", type=["pdf"], accept_multiple_files=True)
+uploaded_files = st.file_uploader("Upload Files", type=["pdf", "csv"], accept_multiple_files=True)
 
 if jd_input and uploaded_files:
     with st.spinner("Analyzing resumes..."):
